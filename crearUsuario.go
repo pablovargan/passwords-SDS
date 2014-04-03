@@ -2,8 +2,9 @@ package main
 
 import (
 	"bufio"
-	//"crypto/sha512"
-	//"encoding/base64"
+	"crypto/rand"
+	"crypto/sha512"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strings"
@@ -24,11 +25,23 @@ func main() {
 	value := strings.TrimSpace(password)
 	m[key] = value
 
-	//bv := []byte(key)
-	//hasher := sha512.New()
-	//hasher.Sum(bv)
-
-	//fmt.Print(hasher)
-	//toString := base64.URLEncoding.EncodeToString(hasher.Sum(bv))
-	//fmt.Print(toString)
+	// Generates 90 bytes random numbers
+	salt := make([]byte, 90)
+	_, err := rand.Read(salt)
+	if err != nil {
+		panic(err)
+	}
+	pass := []byte(value)
+	// Append pass to salt
+	for i := 0; i < len(pass); i++ {
+		salt = append(salt, pass[i])
+	}
+	// Hash complete salt(salt+password)
+	hasher := sha512.New()
+	hasher.Write(salt)
+	valueSha := base64.URLEncoding.EncodeToString(hasher.Sum(salt))
+	// Key -> User, Value = (salt+password) to SHA512
+	m[key] = valueSha
+	// Enjoy!
+	fmt.Println(m[key])
 }
