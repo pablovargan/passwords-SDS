@@ -10,38 +10,71 @@ import (
 	"strings"
 )
 
-func main() {
+type Pass struct {
+	salt         []byte
+	passwordSalt string
+}
 
-	m := make(map[string]string)
+type User struct {
+	Email string
+	// Hashmap with string as key and Pass as value
+	Id map[string]Pass
+}
+
+func convert(p *Pass) (n int, pValue Pass) {
+	pValue = Pass{p.salt, p.passwordSalt}
+	return len(pValue.passwordSalt), pValue
+}
+
+func check(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
+func main() {
+	// Create user
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Print("Enter Username: ")
-	username, _ := reader.ReadString('\n')
+	u, _ := reader.ReadString('\n')
+	username := strings.TrimSpace(u)
 
 	fmt.Print("Enter Password: ")
-	password, _ := reader.ReadString('\n')
+	p, _ := reader.ReadString('\n')
+	password := strings.TrimSpace(p)
 
-	key := strings.TrimSpace(username)
-	value := strings.TrimSpace(password)
-	m[key] = value
-
-	// Generates 90 bytes random numbers
-	salt := make([]byte, 90)
-	_, err := rand.Read(salt)
-	if err != nil {
-		panic(err)
+	// Make a salt
+	pStruct := new(Pass)
+	pStruct.salt = make([]byte, 90)
+	_, err := rand.Read(pStruct.salt)
+	check(err)
+	// Convert password to bytes
+	pS := []byte(password)
+	// Append pS with salt
+	tmp := make([]byte, 90+len(pS))
+	for i := 0; i < len(pS); i++ {
+		tmp = append(pStruct.salt, pS[i])
 	}
-	pass := []byte(value)
-	// Append pass to salt
-	for i := 0; i < len(pass); i++ {
-		salt = append(salt, pass[i])
-	}
-	// Hash complete salt(salt+password)
+	// 'Hashing' time :)
 	hasher := sha512.New()
-	hasher.Write(salt)
-	valueSha := base64.URLEncoding.EncodeToString(hasher.Sum(salt))
-	// Key -> User, Value = (salt+password) to SHA512
-	m[key] = valueSha
-	// Enjoy!
-	fmt.Println(m[key])
+	hasher.Reset()
+	_, err = hasher.Write(tmp)
+	check(err)
+	// Set to passwordSalt the tmp hashed
+	pStruct.passwordSalt = base64.URLEncoding.EncodeToString(hasher.Sum(tmp))
+
+	// New instance of user
+	user := new(User)
+	user.Email = username
+	user.Id = make(map[string]Pass)
+
+	// Convert the pStruct pointer to value ;)
+	length, pToValue := convert(pStruct)
+	// Check if the conversion was correct
+	if length != len(pStruct.passwordSalt) {
+		panic(length)
+	}
+	user.Id[user.Email] = pToValue
+	fmt.Println(user)
 }
