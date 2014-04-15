@@ -4,6 +4,8 @@ import (
 	"crypto/rand"
 	"crypto/sha512"
 	"encoding/base64"
+	"encoding/json"
+	"io/ioutil"
 	"log"
 )
 
@@ -13,7 +15,6 @@ type Pass struct {
 }
 
 type User struct {
-	Email string
 	// Map with string as key and Pass as value
 	Id map[string]Pass
 }
@@ -37,7 +38,7 @@ func MakeSalt(salt *[]byte) {
 
 func CreateUser(user string, password string) {
 	if user == "" || password == "" {
-		log.Fatal("User/Password does not null")
+		log.Fatal("User/Password is null")
 	}
 
 	pUser := new(Pass)
@@ -57,14 +58,23 @@ func CreateUser(user string, password string) {
 	pUser.passwordSalt = base64.URLEncoding.EncodeToString(hasher.Sum(tmp))
 
 	// STORE?
-
 	u := new(User)
-	u.Email = user
-	u.Id = make(map[string]Pass)
+	bytes, err := ioutil.ReadFile(user)
+	if err != nil {
+		u.Id = make(map[string]Pass)
+	}
+	/* Unmarshal parses the JSON-encoded data and
+	   stores the result in the value pointed to by 'bytes'.
+	*/
+	err = json.Unmarshal(bytes, &u.Id)
+	check(err)
+
+	//u := new(User)
+	//u.Id = make(map[string]Pass)
 
 	length, pToValue := convertPointer(pUser)
 	if length != len(pUser.passwordSalt) {
 		log.Fatal("Error converting pointer to value")
 	}
-	u.Id[u.Email] = pToValue
+	u.Id[user] = pToValue
 }
