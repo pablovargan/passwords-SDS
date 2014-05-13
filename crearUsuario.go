@@ -46,13 +46,13 @@ func main() {
 
 	// Make a salt
 	pStruct := new(Pass)
-	pStruct.salt = make([]byte, 90)
+	pStruct.salt = make([]byte, 16)
 	_, err := rand.Read(pStruct.salt)
 	check(err)
 	// Convert password to bytes
 	pS := []byte(password)
 	// Append pS with salt
-	tmp := make([]byte, 90+len(pS))
+	tmp := make([]byte, 16+len(pS))
 	for i := 0; i < len(pS); i++ {
 		tmp = append(pStruct.salt, pS[i])
 	}
@@ -61,7 +61,7 @@ func main() {
 	hasher.Reset()
 	_, err = hasher.Write(tmp)
 	check(err)
-	// Set to passwordSalt the tmp hashed
+	// Set to passwordSalt the hashed tmp
 	pStruct.passwordSalt = base64.URLEncoding.EncodeToString(hasher.Sum(tmp))
 
 	// New instance of user
