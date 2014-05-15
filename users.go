@@ -1,5 +1,4 @@
-//package sal_hash
-package main
+package users
 
 import (
 	"bufio"
@@ -37,9 +36,10 @@ func check(e error) {
 func createHash(sal []byte, pass []byte) string {
 
 	tmp := make([]byte, len(sal)+len(pass))
-	for i := 0; i < len(pass); i++ {
-		tmp = append(sal, pass[i])
-	}
+
+	copy(tmp[:16], sal)
+	copy(tmp[16:], pass)
+
 	hasher := sha256.New()
 	hasher.Reset()
 	_, err := hasher.Write(tmp)
@@ -106,21 +106,4 @@ func GetUser(email string, password string) bool {
 	} else {
 		return false
 	}
-}
-
-func main() {
-	reader := bufio.NewReader(os.Stdin)
-
-	fmt.Print("Enter Username: ")
-	u, _ := reader.ReadString('\n')
-	username := strings.TrimSpace(u)
-
-	fmt.Print("Enter Password: ")
-	p, _ := reader.ReadString('\n')
-	password := strings.TrimSpace(p)
-
-	fmt.Println(username)
-	fmt.Println(password)
-	//StoreUser(username, CreatePass(username, password))
-	fmt.Println((GetUser(username, password)))
 }
