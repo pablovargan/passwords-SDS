@@ -4,7 +4,7 @@ package main
 import (
 	"bufio"
 	"crypto/rand"
-	"crypto/sha512"
+	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -12,7 +12,6 @@ import (
 	"log"
 	"os"
 	"strings"
-	"syscall"
 )
 
 const (
@@ -24,8 +23,6 @@ type Pass struct {
 	PasswordSal string `json:"passwordSal"`
 }
 
-type User map[string]Pass
-
 func convertPointer(p *Pass) (n int, pValue Pass) {
 	pValue = Pass{p.Sal, p.PasswordSal}
 	return len(pValue.PasswordSal), pValue
@@ -35,6 +32,20 @@ func check(e error) {
 	if e != nil {
 		log.Fatal(e)
 	}
+}
+
+func createHash(sal []byte, pass []byte) string {
+
+	tmp := make([]byte, len(sal)+len(pass))
+	for i := 0; i < len(pass); i++ {
+		tmp = append(sal, pass[i])
+	}
+	hasher := sha256.New()
+	hasher.Reset()
+	_, err := hasher.Write(tmp)
+	check(err)
+
+	return base64.URLEncoding.EncodeToString(hasher.Sum(tmp))
 }
 
 func MakeSal(sal *[]byte) {
@@ -50,19 +61,8 @@ func CreatePass(user string, password string) Pass {
 
 	pUser := new(Pass)
 	MakeSal(&pUser.Sal)
-	pPass := []byte(password)
 
-	tmp := make([]byte, len(pUser.Sal)+len(pPass))
-	for i := 0; i < len(pPass); i++ {
-		tmp = append(pUser.Sal, pPass[i])
-	}
-
-	hasher := sha512.New()
-	hasher.Reset()
-	_, err := hasher.Write(tmp)
-	check(err)
-
-	pUser.PasswordSal = base64.URLEncoding.EncodeToString(hasher.Sum(tmp))
+	pUser.PasswordSal = createHash(pUser.Sal, []byte(password))
 	length, pToValue := convertPointer(pUser)
 	if length != len(pUser.PasswordSal) {
 		log.Fatal("Error converting pointer to value")
@@ -72,57 +72,41 @@ func CreatePass(user string, password string) Pass {
 }
 
 func StoreUser(email string, pass Pass) {
-	//var users [...]User
+	var warehouse map[string]Pass
+
 	bytes, err := ioutil.ReadFile(directory)
-	check(err)
-	json.Unmarshal(bytes, &users)
-
-	var u User
-	u = make(map[string]Pass)
-	u[email] = pass
-
-	//bytes, err = json.Marshal(users)
-	//u = pass
-	//bytes, err = json.Marshal(u)
-	//ioutil.WriteFile(user, bytes, 0666)
-}
-
-/*u := new(User)
-	bytes, err := ioutil.ReadFile(user)
 	if err != nil {
-		u.Id = make(map[string]Pass)
+		warehouse = make(map[string]Pass)
 	}
-	/*
-		 Unmarshal parses the JSON-encoded data and
-		   stores the result in the value pointed to by 'bytes'.
+	json.Unmarshal(bytes, &warehouse)
 
-		length, pToValue := convertPointer(pUser)
-		if length != len(pUser.passwordSalt) {
-			log.Fatal("Error converting pointer to value")
-		}
-		u.Id[user] = pToValue
-		err = json.Unmarshal(bytes, &u)
-		check(err)
-		/*length, pToValue := convertPointer(pUser)
-		if length != len(pUser.passwordSalt) {
-			log.Fatal("Error converting pointer to value")
-		}
-		u.Id[user] = pToValue
-
-		bytes, err = json.Marshal(u)
-		ioutil.WriteFile(user, bytes, 0666)
-
-		/*
-			u := new(User)
-			u.Id = make(map[string]Pass)
-
-			length, pToValue := convertPointer(pUser)
-			if length != len(pUser.passwordSalt) {
-				log.Fatal("Error converting pointer to value")
-			}
-			u.Id[user] = pToValue
+	warehouse[email] = pass
+	bytes, err = json.Marshal(warehouse)
+	ioutil.WriteFile(directory, bytes, 0666)
 }
-*/
+
+func GetUser(email string, password string) bool {
+	var warehouse map[string]Pass
+
+	bytes, err := ioutil.ReadFile(directory)
+	if err != nil {
+		log.Fatal("The file does not exist")
+	}
+	json.Unmarshal(bytes, &warehouse)
+
+	// Check if email exists
+	data := warehouse[email]
+	if data.Sal == nil {
+		return false
+	}
+	// Get password+sal generated
+	var passSaltGen = createHash(data.Sal, []byte(password))
+	if passSaltGen == data.PasswordSal {
+		return true
+	} else {
+		return false
+	}
+}
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
@@ -137,5 +121,6 @@ func main() {
 
 	fmt.Println(username)
 	fmt.Println(password)
-	StoreUser(username, CreatePass(username, password))
+	//StoreUser(username, CreatePass(username, password))
+	fmt.Println((GetUser(username, password)))
 }
