@@ -12,11 +12,11 @@ type Password struct {
 	Notes []byte `json:"notes"`
 }
 
-func CreatePasswordEntry(login string, pass string, notes string) Password {
+func CreatePasswordEntry(login string, pass []byte, notes []byte) Password {
 	var entry Password
 	entry.Login = login
-	entry.Pass = []byte(pass)
-	entry.Notes = []byte(notes)
+	entry.Pass = pass
+	entry.Notes = notes
 
 	return entry
 }

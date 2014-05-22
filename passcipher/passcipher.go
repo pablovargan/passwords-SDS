@@ -5,7 +5,6 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"io"
-	"passwords-SDS/passwords"
 )
 
 /*
@@ -25,7 +24,7 @@ func Cipher(plain_text []byte, cipher_pass []byte) []byte {
 	}
 
 	stream := cipher.NewCTR(block, iv)
-	stream.XORKeyStream(plain_text, ciphertext[aes.BlockSize:])
+	stream.XORKeyStream(ciphertext[aes.BlockSize:], plain_text)
 
 	return ciphertext
 }
