@@ -6,6 +6,8 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"fmt"
+	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 	"os"
 	"strings"
 )

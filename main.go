@@ -13,7 +13,7 @@ func main() {
 	opt := "0"
 	logged, user := setCredentials()
 
-	for opt != "3" {
+	for opt != "4" {
 		if logged == true {
 			opt = menu()
 			switch opt {
@@ -24,6 +24,9 @@ func main() {
 				getPass(user)
 
 			case "3":
+				deletePass(user)
+
+			case "4":
 				fmt.Println("\nSaliendo...")
 
 			default:
@@ -42,7 +45,8 @@ func menu() string {
 	fmt.Println("\nElige la opcion que desees")
 	fmt.Println("1. Añadir password")
 	fmt.Println("2. Consultar password")
-	fmt.Println("3. Salir")
+	fmt.Println("3. Eliminar password")
+	fmt.Println("4. Salir")
 	fmt.Print("> ")
 	scanner.Scan()
 	opt := scanner.Text()
@@ -145,17 +149,39 @@ func getPass(user string) {
 	fmt.Println("\nSitios almacenados:")
 	passwords.ListSites(user)
 
-	fmt.Print("\nIntroduce el site que quieres consultar:")
+	fmt.Print("\nIntroduce el site que quieres consultar: ")
 	scanner.Scan()
 	site := scanner.Text()
 
 	entry := passwords.GetPassword(user, site)
+	if entry.Pass == nil {
+		fmt.Println("El sitio no existe")
+	} else {
+		pass := passcipher.Decipher(entry.Pass, cipher_pass)
+		notes := passcipher.Decipher(entry.Notes, cipher_pass)
 
-	pass := passcipher.Decipher(entry.Pass, cipher_pass)
-	notes := passcipher.Decipher(entry.Notes, cipher_pass)
+		fmt.Printf("Sitio %s\n", site)
+		fmt.Printf("Login: %s\n", entry.Login)
+		fmt.Printf("Password: %s\n", string(pass))
+		fmt.Printf("Notas: %s\n", string(notes))
+	}
 
-	fmt.Printf("Sitio %s\n", site)
-	fmt.Printf("Login: %s\n", entry.Login)
-	fmt.Printf("Password: %s\n", string(pass))
-	fmt.Printf("Notas: %s\n", string(notes))
+}
+
+func deletePass(user string) {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	fmt.Println("\nSitios almacenados:")
+	passwords.ListSites(user)
+
+	fmt.Print("\nIntroduce el site que quieres eliminar: ")
+	scanner.Scan()
+	site := scanner.Text()
+
+	entry := passwords.GetPassword(user, site)
+	if entry.Pass == nil {
+		fmt.Println("El sitio no existe")
+	} else {
+		passwords.DeletePassword(user, site, entry)
+	}
 }

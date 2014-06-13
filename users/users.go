@@ -97,7 +97,7 @@ func GetUser(email string, password string) bool {
 
 	bytes, err := ioutil.ReadFile(directory)
 	if err != nil {
-		log.Fatal("The file does not exist")
+		return false
 	}
 	json.Unmarshal(bytes, &warehouse)
 
@@ -106,6 +106,7 @@ func GetUser(email string, password string) bool {
 	if data.Sal == nil {
 		return false
 	}
+
 	// Get password+sal generated
 	var passSaltGen = createHash(data.Sal, []byte(password))
 	if string(passSaltGen) == string(data.PasswordSal) {

@@ -40,6 +40,28 @@ func StorePassword(user string, site string, entry Password) {
 	ioutil.WriteFile(user, bytes, 0666)
 }
 
+func DeletePassword(user string, site string, entry Password) {
+	var warehouse map[string]Password
+
+	bytes, err := ioutil.ReadFile(user)
+
+	if err != nil {
+		warehouse = make(map[string]Password)
+	}
+
+	json.Unmarshal(bytes, &warehouse)
+
+	newWarehouse := make(map[string]Password)
+	for key, value := range warehouse {
+		if key != site {
+			newWarehouse[key] = value
+		}
+	}
+	bytes, err = json.Marshal(newWarehouse)
+
+	ioutil.WriteFile(user, bytes, 0666)
+}
+
 func GetPassword(user string, site string) Password {
 	var warehouse map[string]Password
 
